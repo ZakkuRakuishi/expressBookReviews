@@ -142,97 +142,95 @@ public_users.get('/review/:isbn', function (req, res) {
     }
 });
 
-// Task 10
-public_users.get('/', async (req, res) => {
-    try {
-        const allBooks = await getBooks();
-        if (allBooks && allBooks.length > 0) {
-            return res.status(200).json(allBooks);
-        } else {
-            return res.status(404).json({message: "No books found!"});
-        }
-    } catch (error) {
-        return res.status(500).json({message: "Error fetching books!"});
-    }
-});
-
-// Task 11
-public_users.get('/:number', async (req, res) => {
-    let number = req.params.number;
-    try {
-        const book = await getBookByISBN(number);
-        if (book) {
-            return res.status(200).json(book);
-        } else {
-            return res.status(404).json({message: "Book not found!"});
-        }
-    } catch (error) {
-        return res.status(500).json({message: "Error fetching book details!"});
-    }
-});
-
-// Task 12
-public_users.get('/author/:author', async (req, res) => {
-    let authorName = req.params.author;
-    try {
-        const booksByAuthor = await getBooksByAuthor(authorName);
-        if (booksByAuthor && booksByAuthor.length > 0) {
-            return res.status(200).json(booksByAuthor);
-        } else {
-            return res.status(404).json({message: "No books found by the specified author!"});
-        }
-    } catch (error) {
-        return res.status(500).json({message: "Error fetching books by author!"});
-    }
-});
-
-// Task 13
-public_users.get('/title/:title', async (req, res) => {
-    let bookTitle = req.params.title;
-    try {
-        const booksByTitle = await getBooksByTitle(bookTitle);
-        if (booksByTitle && booksByTitle.length > 0) {
-            return res.status(200).json(booksByTitle);
-        } else {
-            return res.status(404).json({message: "No books found with the specified title!"});
-        }
-    } catch (error) {
-        return res.status(500).json({message: "Error fetching books by title!"});
-    }
-});
-
-function getBooks() {
-    return new Promise((resolve) => {
+function fetchDataAsync(data) {
+    return new Promise((resolve, reject) => {
         setTimeout(() => {
-            resolve(Object.values(books));
-        }, 100); 
+            resolve(data);
+        }, 1000);
     });
 }
 
-function getBookByISBN(isbn) {
-    return new Promise((resolve) => {
-        setTimeout(() => {
-            resolve(books[isbn]);
-        }, 100);
-    });
-}
+// Task 10: Get the book list available in the shop using Promises
+public_users.get('/', (req, res) => {
+    fetchDataAsync(books)
+        .then(data => {
+            if (Object.keys(data).length > 0) {
+                let formattedBooks = Object.values(data).map(book => ({
+                    "Author": book.author,
+                    "Title": book.title,
+                    "Reviews": book.reviews
+                }));
+                res.status(200).json(formattedBooks);
+            } else {
+                res.status(404).json({ message: "No books found!" });
+            }
+        })
+        .catch(error => {
+            res.status(500).json({ message: "Internal Server Error" });
+        });
+});
 
-function getBooksByAuthor(authorName) {
-    return new Promise((resolve) => {
-        setTimeout(() => {
-            const filteredBooks = Object.values(books).filter(book => book.author === authorName);
-            resolve(filteredBooks);
-        }, 100); 
-    });
-}
+// Task 11: Get book details based on ISBN using Promises
+public_users.get('/:number', (req, res) => {
+    fetchDataAsync(books)
+        .then(data => {
+            if (data[req.params.number]) {
+                let book = data[req.params.number];
+                let formattedBook = {
+                    "Author": book.author,
+                    "Title": book.title,
+                    "Reviews": book.reviews
+                };
+                res.status(200).json(formattedBook);
+            } else {
+                res.status(404).json({ message: "Book not found!" });
+            }
+        })
+        .catch(error => {
+            res.status(500).json({ message: "Internal Server Error" });
+        });
+});
 
-function getBooksByTitle(bookTitle) {
-    return new Promise((resolve) => {
-        setTimeout(() => {
-            const filteredBooks = Object.values(books).filter(book => book.title === bookTitle);
-            resolve(filteredBooks);
-        }, 100);  
-    });
-}
+// Task 12: Get book details based on Author using Promises
+public_users.get('/author/:author', (req, res) => {
+    fetchDataAsync(books)
+        .then(data => {
+            let booksByAuthor = Object.values(data).filter(book => book.author === req.params.author)
+                .map(book => ({
+                    "Author": book.author,
+                    "Title": book.title,
+                    "Reviews": book.reviews
+                }));
+            if (booksByAuthor.length > 0) {
+                res.status(200).json(booksByAuthor);
+            } else {
+                res.status(404).json({ message: "No books found by the specified author!" });
+            }
+        })
+        .catch(error => {
+            res.status(500).json({ message: "Internal Server Error" });
+        });
+});
+
+// Task 13: Get book details based on Title using Promises
+public_users.get('/title/:title', (req, res) => {
+    fetchDataAsync(books)
+        .then(data => {
+            let booksByTitle = Object.values(data).filter(book => book.title === req.params.title)
+                .map(book => ({
+                    "Author": book.author,
+                    "Title": book.title,
+                    "Reviews": book.reviews
+                }));
+            if (booksByTitle.length > 0) {
+                res.status(200).json(booksByTitle);
+            } else {
+                res.status(404).json({ message: "No books found with the specified title!" });
+            }
+        })
+        .catch(error => {
+            res.status(500).json({ message: "Internal Server Error" });
+        });
+});
 
 module.exports.general = public_users;
